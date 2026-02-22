@@ -1,0 +1,27 @@
+steps:
+  # Construire l'image Docker
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'europe-west1-docker.pkg.dev/$PROJECT_ID/ssh-repo/ssh-tunnel:$SHORT_SHA', '.']
+
+  # Pousser l'image vers Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'europe-west1-docker.pkg.dev/$PROJECT_ID/ssh-repo/ssh-tunnel:$SHORT_SHA']
+
+  # Déployer sur Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'ssh-tunnel-service'
+      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/ssh-repo/ssh-tunnel:$SHORT_SHA'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=2222'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--set-env-vars=SSH_USER=danaelssh1,SSH_PASS=123456'
+
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/ssh-repo/ssh-tunnel:$SHORT_SHA'
